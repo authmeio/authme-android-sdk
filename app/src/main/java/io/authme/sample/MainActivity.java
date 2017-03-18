@@ -20,18 +20,21 @@ import io.authme.sdk.server.Config;
 public class MainActivity extends AppCompatActivity {
 
     Button patternbutton;
+
     private static final int RESULT = 1;
+
+    Config config;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Config config = new Config(MainActivity.this);
+        config = new Config(MainActivity.this);
 
         config.setEnvironment(Config.SANDBOX); //Change this to Config.PRODUCTION when you are ready
 
-        config.setAPIKey("YOUR_API_KEY_HERE"); //Remember that the keys are different for sandbox and production
+        config.setAPIKey("YOUR_API_KEY"); //Remember that the keys are different for sandbox and production
 
         config.setEmailId("USER_EMAIL_ID");
 
@@ -47,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void callPatternActivity() {
         Intent intent = new Intent(MainActivity.this, AuthScreen.class);
-        startActivityForResult(intent, RESULT);
+        startActivityForResult(putLogo(intent), RESULT);
     }
 
     @Override
