@@ -32,15 +32,17 @@ public class Config {
     public static final String SANDBOX_SERVER_URL = SANDBOX_HOST;
 
     public static final String STORED_VALUES = "STORED_VALUES";
-    public static final String API_KEY = "API_KEY",
-            BYTE_ARRAY = "BYTE_ARRAY", EMAIL= "emailId",
-            DEVICE_ID = "deviceId", ENVIRONMENT = "environment",
-            PRODUCTION = "PROD", SANDBOX = "TEST",
-            SECRET_KEY = "secretkey";
+    public static final String API_KEY = "API_KEY";
+    public static final String BYTE_ARRAY = "BYTE_ARRAY";
+    public static final String EMAIL= "emailId";
+    public static final String DEVICE_ID = "deviceId";
+    public static final String ENVIRONMENT = "environment";
+    public static final String PRODUCTION = "PROD";
+    public static final String SANDBOX = "TEST";
+    public static final String SECRET_KEY = "secretkey";
     private SharedPreferences userpreference;
     private SharedPreferences.Editor editor;
     private Activity activity;
-    private String emailId, deviceId;
 
 
     public String getEmailId() {
@@ -48,7 +50,6 @@ public class Config {
     }
 
     public void setEmailId(String emailId) {
-        this.emailId = emailId;
         editor.putString(EMAIL, emailId);
         editor.apply();
         editor.commit();
@@ -63,7 +64,6 @@ public class Config {
     }
 
     public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
         editor.putString(DEVICE_ID, deviceId);
         editor.apply();
         editor.commit();
@@ -141,18 +141,11 @@ public class Config {
     }
 
     public boolean isValidConfig() {
-        String email = getEmailId();
         String API_Key = getApiKey();
         String environment = userpreference.getString(ENVIRONMENT, null);
 
         if (!TextUtils.equals(environment, PRODUCTION) && !TextUtils.equals(environment, SANDBOX)) {
             Toast.makeText(this.activity, "Invalid Environment", Toast.LENGTH_LONG)
-                    .show();
-            return false;
-        }
-
-        if (!isValidEmail(email)) {
-            Toast.makeText(this.activity, "Invalid Email", Toast.LENGTH_LONG)
                     .show();
             return false;
         }

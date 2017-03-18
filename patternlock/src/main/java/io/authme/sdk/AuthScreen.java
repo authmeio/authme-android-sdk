@@ -35,9 +35,9 @@ import io.authme.sdk.server.Callback;
 import io.authme.sdk.server.Config;
 import io.authme.sdk.server.PostData;
 
-import static io.authme.sdk.server.Config.RESET_PATTERN;
 import static io.authme.sdk.server.Config.INVALID_CONFIG;
 import static io.authme.sdk.server.Config.LOGIN_PATTERN;
+import static io.authme.sdk.server.Config.RESET_PATTERN;
 import static io.authme.sdk.server.Config.RESULT_FAILED;
 import static io.authme.sdk.server.Config.SIGNUP_PATTERN;
 
@@ -45,7 +45,9 @@ import static io.authme.sdk.server.Config.SIGNUP_PATTERN;
 public class AuthScreen extends Activity {
 
     private static final String AUTHMEIO = "AUTHMEIO";
-    private String referenceId, resetKey = null, statusbar = null, titlecolor = null, titletext = null, logo = null;
+    private String referenceId, resetKey = null, statusbar = null,
+            titlecolor = null, titletext = null,
+            logo = null, email = null;
     private Config config;
 
     public AuthScreen() {
@@ -54,22 +56,20 @@ public class AuthScreen extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         config = new Config(AuthScreen.this);
+
+        email = getIntent().getStringExtra("email");
+
+        if (!Config.isValidEmail(email)) {
+            Toast.makeText(getApplicationContext(), "Invalid Email", Toast.LENGTH_LONG)
+                    .show();
+            return;
+        }
 
         if (!config.isValidConfig()) {
             endActivity(INVALID_CONFIG);
             return;
-        }
-
-        if (getIntent().hasExtra("referenceId")) {
-            referenceId = getIntent().getStringExtra("referenceId");
-        }
-        else {
-            referenceId = UUID.randomUUID().toString();
-        }
-
-        if (getIntent().hasExtra("resetKey")) {
-            resetKey = getIntent().getStringExtra("resetKey");
         }
 
         if (getIntent().hasExtra("statusbar")) {
@@ -86,6 +86,19 @@ public class AuthScreen extends Activity {
 
         if (getIntent().hasExtra("logo")) {
             logo = getIntent().getStringExtra("logo");
+        }
+
+        if (getIntent().hasExtra("referenceId")) {
+            referenceId = getIntent().getStringExtra("referenceId");
+        }
+        else {
+            referenceId = UUID.randomUUID().toString();
+        }
+
+        if (getIntent().hasExtra("resetKey")) {
+            resetKey = getIntent().getStringExtra("resetKey");
+            resetFlow();
+            return;
         }
 
         startExecution();
@@ -114,36 +127,13 @@ public class AuthScreen extends Activity {
     }
 
     private void startExecution() {
-        String stringArray = config.getPatternString();
-        Intent intent = new Intent(AuthScreen.this, LockPatternActivity.class);
 
-        if (!TextUtils.isEmpty(statusbar)) {
-            intent.putExtra("statusbar", statusbar);
-        }
-
-        if (!TextUtils.isEmpty(titletext)) {
-            intent.putExtra("titletext", titletext);
-        }
-
-        if (!TextUtils.isEmpty(titlecolor)) {
-            intent.putExtra("titlecolor", titlecolor);
-        }
-
-        if (!TextUtils.isEmpty(logo)) {
-            intent.putExtra("logo", logo);
-        }
-
-        if (!TextUtils.isEmpty(stringArray)) {
-            char[] charArray = stringArray.toCharArray();
-            intent.setAction(LockPatternActivity.ACTION_COMPARE_PATTERN);
-            intent.putExtra(LockPatternActivity.EXTRA_PATTERN, charArray);
-            startActivityForResult(intent, LOGIN_PATTERN);
-        }
-        else {
-            intent.setAction(LockPatternActivity.ACTION_CREATE_PATTERN);
-            startActivityForResult(intent, SIGNUP_PATTERN);
-        }
-
+        checkIfuserExists(new Callback() {
+            @Override
+            public void onTaskExecuted(String response) {
+                startLockScreen(response);
+            }
+        });
     }
 
     @Override
@@ -204,35 +194,8 @@ public class AuthScreen extends Activity {
 
     private void postAuthResult(String biggerJson) throws InvalidKeyException, JSONException {
 
-        callOtpVerify();
-
         callSensorVerify(biggerJson);
 
-    }
-
-    private void callOtpVerify() {
-        JSONObject otpObject = new JSONObject();
-        try {
-            otpObject.put("User", config.getEmailId());
-            otpObject.put("Otp", config.getOTP());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        Callback otp_callback = new Callback() {
-            @Override
-            public void onTaskExecuted(String response) {
-                //what to expect here
-            }
-        };
-
-        io.authme.sdk.server.PostData postOtp = new io.authme.sdk.server.PostData(otp_callback, config.getApiKey());
-
-        try {
-            postOtp.runPost(config.getServerURL() + "api/otp", otpObject.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void callSensorVerify(String biggerJson) throws InvalidKeyException, JSONException {
@@ -243,7 +206,7 @@ public class AuthScreen extends Activity {
             try {
                 jsonObject = new JSONObject(biggerJson);
                 jsonObject.put("OrderId", referenceId);
-                jsonObject.put("User", config.getEmailId());
+                jsonObject.put("User", email);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -290,6 +253,7 @@ public class AuthScreen extends Activity {
                     jsonObject = new JSONObject(response);
                     if (jsonObject.getInt("Status") == 201) {
                         JSONObject data = jsonObject.getJSONObject("Data");
+                        config.setEmailId(email);
                         config.setSecretKey(data.getString("Key"));
                         endActivity(SIGNUP_PATTERN);
                     }
@@ -312,7 +276,7 @@ public class AuthScreen extends Activity {
             e.printStackTrace();
         }
         try {
-            request.put("Email", config.getEmailId());
+            request.put("Email", email);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -332,5 +296,104 @@ public class AuthScreen extends Activity {
             endActivity(RESULT_FAILED);
         }
 
+    }
+
+    private void checkIfuserExists(Callback callback) {
+
+        JSONObject user = new JSONObject();
+
+        if (TextUtils.equals(email, config.getEmailId())) {
+            JSONObject response = new JSONObject();
+            try {
+                response.put("Status", 200);
+                JSONObject data = new JSONObject();
+                data.put("Message", "FOUND");
+                data.put("Data", null);
+                response.put("Data", data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            callback.onTaskExecuted(response.toString());
+            return;
+        }
+
+        try {
+            user.put("Email", email);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "user/is", user.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            endActivity(RESULT_FAILED);
+        }
+    }
+
+    private void startLockScreen(String userstatus) {
+        String stringArray = config.getPatternString();
+
+        Intent intent = new Intent(AuthScreen.this, LockPatternActivity.class);
+
+        JSONObject status;
+
+        try {
+            status = new JSONObject(userstatus);
+            if (status.getInt("Status") == 200) {
+                String userExists = status.getJSONObject("Data").getString("Message");
+                if (TextUtils.equals(userExists, "FOUND")) {
+                    if (TextUtils.isEmpty(stringArray)) {
+                        endActivity(RESET_PATTERN);
+                    }
+                    else {
+                        char[] charArray = stringArray.toCharArray();
+                        intent.setAction(LockPatternActivity.ACTION_COMPARE_PATTERN);
+                        intent.putExtra(LockPatternActivity.EXTRA_PATTERN, charArray);
+                        startActivityForResult(addOns(intent), LOGIN_PATTERN);
+                    }
+
+                }
+                else if (TextUtils.equals(userExists, "NOTFOUND")){
+                    signupUser(intent);
+                }
+                else {
+                    return;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void resetFlow() {
+        Intent intent = new Intent(AuthScreen.this, LockPatternActivity.class);
+        signupUser(addOns(intent));
+    }
+
+    private void signupUser(Intent intent) {
+        intent.setAction(LockPatternActivity.ACTION_CREATE_PATTERN);
+        startActivityForResult(addOns(intent), SIGNUP_PATTERN);
+    }
+
+    private Intent addOns(Intent intent) {
+        if (!TextUtils.isEmpty(statusbar)) {
+            intent.putExtra("statusbar", statusbar);
+        }
+
+        if (!TextUtils.isEmpty(titletext)) {
+            intent.putExtra("titletext", titletext);
+        }
+
+        if (!TextUtils.isEmpty(titlecolor)) {
+            intent.putExtra("titlecolor", titlecolor);
+        }
+
+        if (!TextUtils.isEmpty(logo)) {
+            intent.putExtra("logo", logo);
+        }
+
+        return intent;
     }
 }
