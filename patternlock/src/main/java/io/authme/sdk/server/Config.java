@@ -13,6 +13,7 @@ package io.authme.sdk.server;
 */
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.widget.Toast;
@@ -43,10 +44,23 @@ public class Config {
     private SharedPreferences userpreference;
     private SharedPreferences.Editor editor;
     private Activity activity;
+    private Context context;
 
 
     public String getEmailId() {
         return userpreference.getString(EMAIL, null);
+    }
+
+    public Config(Activity activity) {
+        this.activity = activity;
+        userpreference = this.activity.getSharedPreferences(STORED_VALUES, 0);
+        editor = userpreference.edit();
+    }
+
+    public Config(Context context) {
+        this.context = context;
+        userpreference = this.activity.getSharedPreferences(STORED_VALUES, 0);
+        editor = userpreference.edit();
     }
 
     public void setEmailId(String emailId) {
@@ -67,12 +81,6 @@ public class Config {
         editor.putString(DEVICE_ID, deviceId);
         editor.apply();
         editor.commit();
-    }
-
-    public Config(Activity activity) {
-        this.activity = activity;
-        userpreference = this.activity.getSharedPreferences(STORED_VALUES, 0);
-        editor = userpreference.edit();
     }
 
     public void setAPIKey(String key) {
