@@ -59,7 +59,7 @@ public class Config {
 
     public Config(Context context) {
         this.context = context;
-        userpreference = this.activity.getSharedPreferences(STORED_VALUES, 0);
+        userpreference = this.context.getSharedPreferences(STORED_VALUES, 0);
         editor = userpreference.edit();
     }
 
