@@ -12,7 +12,7 @@ buildscript {
 }
 
 group = 'io.authme'
-version = '0.1.4'
+version = '0.1.5'
 
 allprojects {
     repositories {
@@ -79,9 +79,9 @@ bintray {
         licenses = ['Apache-2.0']
         vcsUrl = 'https://github.com/shardullavekar/Authme_SDK.git'
         version {
-            name = '0.1.4'
+            name = '0.1.5'
             desc = 'AuthMe helps you replace passwords in your apps'
-            vcsTag = '0.1.4'
+            vcsTag = '0.1.5'
             attributes = ['gradle-plugin': 'io.authme:authme-sdk:0.1']
         }
     }
