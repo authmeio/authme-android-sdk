@@ -545,6 +545,7 @@ public class LockPatternActivity extends Activity {
             if (btnOkEnabled != null) mBtnConfirm.setEnabled(btnOkEnabled);
         }// ACTION_CREATE_PATTERN
         else if (ACTION_COMPARE_PATTERN.equals(getIntent().getAction())) {
+            mFooter.setVisibility(View.INVISIBLE);
             if (TextUtils.isEmpty(infoText))
                 mTextInfo.setText(io.authme.sdk.R.string.alp_42447968_msg_draw_pattern_to_unlock);
             else
