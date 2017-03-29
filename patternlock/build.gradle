@@ -25,7 +25,7 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 25
     buildToolsVersion '25.0.2'
 
     repositories {
@@ -60,8 +60,9 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.squareup.okhttp:okhttp:2.5.0'
-    compile 'com.android.support:support-v4:23.2.1'
-    compile 'com.android.support:appcompat-v7:23.2.1'
+    compile 'com.android.support:support-v4:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.andrognito.pinlockview:pinlockview:2.0.1'
     compile 'org.jboss.aerogear:aerogear-otp-java:1.0.0'
 }
 

@@ -37,6 +37,7 @@ import io.authme.sdk.server.PostData;
 
 import static io.authme.sdk.server.Config.INVALID_CONFIG;
 import static io.authme.sdk.server.Config.LOGIN_PATTERN;
+import static io.authme.sdk.server.Config.PIN_SET;
 import static io.authme.sdk.server.Config.RESET_PATTERN;
 import static io.authme.sdk.server.Config.RESULT_FAILED;
 import static io.authme.sdk.server.Config.SIGNUP_PATTERN;
@@ -47,7 +48,7 @@ public class AuthScreen extends Activity {
     private static final String AUTHMEIO = "AUTHMEIO";
     private String referenceId, resetKey = null, statusbar = null,
             titlecolor = null, titletext = null,
-            logo = null, email = null;
+            logo = null, email = null, pin = null;
     private Config config;
 
     public AuthScreen() {
@@ -144,7 +145,7 @@ public class AuthScreen extends Activity {
                     case RESULT_OK:
                         char[] pattern = data.getCharArrayExtra(LockPatternActivity.EXTRA_PATTERN);
                         config.setByteArray(pattern);
-                        completeSignup();
+                        startPinActivity();
                         break;
                     case RESULT_CANCELED:
                         endActivity(RESULT_CANCELED);
@@ -169,7 +170,6 @@ public class AuthScreen extends Activity {
                         endActivity(RESULT_CANCELED);
                         break;
                     case RESULT_FAILED:
-                        Toast.makeText(AuthScreen.this, "Failed to identify", Toast.LENGTH_SHORT).show();
                         clearJson();
                         endActivity(RESULT_FAILED);
                         break;
@@ -182,6 +182,34 @@ public class AuthScreen extends Activity {
             }
             break;
 
+            case PIN_SET: {
+                switch (resultCode) {
+                    case RESULT_OK:
+                        pin = data.getStringExtra("pin");
+                        completeSignup();
+                        break;
+
+                    case RESULT_CANCELED:
+                        clearJson();
+                        endActivity(RESULT_CANCELED);
+                        break;
+
+                    case RESULT_FAILED:
+                        clearJson();
+                        endActivity(RESULT_FAILED);
+                        break;
+
+                    case RESET_PATTERN:
+                        clearJson();
+                        endActivity(RESET_PATTERN);
+                        break;
+
+                    default:
+                        break;
+                }
+
+            }
+            break;
             default:
                 break;
 
@@ -281,6 +309,12 @@ public class AuthScreen extends Activity {
             e.printStackTrace();
         }
 
+        try {
+            request.put("Pin", pin);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         if (!TextUtils.isEmpty(resetKey)) {
             try {
                 request.put("ResetKey", resetKey);
@@ -370,6 +404,11 @@ public class AuthScreen extends Activity {
     private void resetFlow() {
         Intent intent = new Intent(AuthScreen.this, LockPatternActivity.class);
         signupUser(addOns(intent));
+    }
+
+    private void startPinActivity() {
+        Intent intent = new Intent(AuthScreen.this, PinScreen.class);
+        startActivityForResult(addOns(intent), PIN_SET);
     }
 
     private void signupUser(Intent intent) {

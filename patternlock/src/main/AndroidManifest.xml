@@ -8,8 +8,7 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <application
-        >
+    <application>
         <activity
             android:name=".LockPatternActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"
@@ -20,7 +19,8 @@
             android:theme="@style/Alp_42447968.Theme.Light" />
         <activity
             android:name=".AuthScreen"
-            android:label="@string/title_activity_intermediate"/>
+            android:label="@string/title_activity_intermediate" />
+        <activity android:name=".PinScreen"></activity>
     </application>
 
 </manifest>
