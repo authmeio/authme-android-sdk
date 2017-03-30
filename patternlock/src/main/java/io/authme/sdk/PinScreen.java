@@ -21,6 +21,8 @@ import com.andrognito.pinlockview.PinLockView;
 
 import java.io.FileNotFoundException;
 
+import io.authme.sdk.server.Config;
+
 public class PinScreen extends AppCompatActivity {
     public static final String TAG = "PinLockView";
 
@@ -31,27 +33,16 @@ public class PinScreen extends AppCompatActivity {
 
     private TextView welcome;
     private ImageView imageView;
+    private String action;
 
     private PinLockListener mPinLockListener = new PinLockListener() {
         @Override
         public void onComplete(String pin) {
-            if (firstPin) {
-                pin2 = pin;
-                if (TextUtils.equals(pin1, pin2)) {
-                    Intent intent = new Intent();
-                    intent.putExtra("pin", pin);
-                    setResult(RESULT_OK, intent);
-                    PinScreen.this.finish();
-                }
-                else {
-                    welcome.setText("PINS don't matach!");
-                }
+            if (TextUtils.equals(action, Config.SIGNUP_PIN)) {
+                processSignup(pin);
             }
             else {
-                pin1 = pin;
-                firstPin = true;
-                mPinLockView.resetPinLockView();
-                welcome.setText("Confirm PIN");
+                processSignin(pin);
             }
         }
 
@@ -72,6 +63,8 @@ public class PinScreen extends AppCompatActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        action = getIntent().getAction();
 
         if (getIntent().hasExtra("statusbar")) {
 
@@ -135,6 +128,31 @@ public class PinScreen extends AppCompatActivity {
 
         mIndicatorDots.setIndicatorType(IndicatorDots.IndicatorType.FILL_WITH_ANIMATION);
 
+    }
+
+    private void processSignup(String pin) {
+        if (firstPin) {
+            pin2 = pin;
+            if (TextUtils.equals(pin1, pin2)) {
+                Intent intent = new Intent();
+                intent.putExtra("pin", pin);
+                setResult(RESULT_OK, intent);
+                PinScreen.this.finish();
+            }
+            else {
+                welcome.setText("PINS don't matach!");
+            }
+        }
+        else {
+            pin1 = pin;
+            firstPin = true;
+            mPinLockView.resetPinLockView();
+            welcome.setText("Confirm PIN");
+        }
+    }
+
+    private void processSignin(String pin) {
+        //execute pin verify call here
     }
 
 }

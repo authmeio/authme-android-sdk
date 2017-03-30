@@ -25,7 +25,7 @@ import java.util.UUID;
 public class Config {
     public static final int LOGIN_PATTERN = 2, SIGNUP_PATTERN = 1,
             INVALID_CONFIG = 3, RESULT_FAILED = 5, RESET_PATTERN = 6,
-            PIN_SET = 7;
+            PIN_SIGNUP = 7, PIN_SIGNIN = 8;
 
     public static final String PROD_HOST = "https://api.authme.authme.host/";
     public static final String PROD_SERVER_URL = PROD_HOST;
@@ -42,6 +42,8 @@ public class Config {
     public static final String PRODUCTION = "PROD";
     public static final String SANDBOX = "TEST";
     public static final String SECRET_KEY = "secretkey";
+    public static final String SIGNUP_PIN = "pinsignup";
+    public static final String SIGNIN_PIN = "pinsignin";
     private SharedPreferences userpreference;
     private SharedPreferences.Editor editor;
     private Activity activity;
