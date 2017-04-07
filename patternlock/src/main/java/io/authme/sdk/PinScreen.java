@@ -152,7 +152,7 @@ public class PinScreen extends AppCompatActivity {
     }
 
     private void processSignin(String pin) {
-        //execute pin verify call here
+
     }
 
 }

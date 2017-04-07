@@ -25,8 +25,8 @@
 
     <style name="Alp_42447968.BaseTheme.Light" parent="@android:style/Theme.Material.Light">
         <item name="android:textColorPrimary">@android:color/white</item>
-        <item name="android:colorPrimaryDark">#42A5F5</item>
-        <item name="android:colorPrimary">#2196F3</item>
+        <item name="android:colorPrimaryDark">#433F5B</item>
+        <item name="android:colorPrimary">#544E6B</item>
     </style>
 
     <!-- THEME LIGHT, DARK ACTION BAR -->

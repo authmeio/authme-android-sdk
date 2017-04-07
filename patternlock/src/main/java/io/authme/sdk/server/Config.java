@@ -19,7 +19,10 @@ import android.text.TextUtils;
 import android.widget.Toast;
 
 import org.jboss.aerogear.security.otp.Totp;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.UUID;
 
 public class Config {
@@ -168,5 +171,39 @@ public class Config {
         }
 
         return true;
+    }
+
+    public String getPendingLogins(Callback callback) {
+        if (!isValidEmail(getEmailId())) {
+            Toast.makeText(activity.getApplicationContext(), "Invalid Email", Toast.LENGTH_LONG)
+                    .show();
+            return null;
+        }
+
+        if (!isValidConfig()) {
+            Toast.makeText(activity.getApplicationContext(), "Invalid Config", Toast.LENGTH_LONG)
+                    .show();
+            return null;
+        }
+
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("Email", getEmailId());
+            jsonObject.put("Otp", getOTP());
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        try {
+            new PostData(callback, getApiKey()).runPost(getServerURL() + "user/logins", jsonObject.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(activity.getApplicationContext(), "Internet not available or server down", Toast.LENGTH_LONG)
+                    .show();
+            return null;
+        }
+
+        return null;
     }
 }
