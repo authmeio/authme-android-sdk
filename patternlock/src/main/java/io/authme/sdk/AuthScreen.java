@@ -46,12 +46,12 @@ import static io.authme.sdk.server.Config.SIGNUP_PATTERN;
 
 public class AuthScreen extends Activity {
 
-    private static final String AUTHMEIO = "AUTHMEIO";
     private String referenceId, resetKey = null, statusbar = null,
             titlecolor = null, titletext = null,
             logo = null, email = null, pin = null;
     private Config config;
     private String tempJson;
+    private boolean newapp_userexists = false;
 
     public AuthScreen() {
     }
@@ -147,8 +147,14 @@ public class AuthScreen extends Activity {
                     case RESULT_OK:
                         char[] pattern = data.getCharArrayExtra(LockPatternActivity.EXTRA_PATTERN);
                         tempJson = data.getStringExtra(LockPatternActivity.PATTERN_JSON);
-                        config.setByteArray(pattern);
-                        startPinActivity(Config.PIN_SIGNUP, Config.SIGNUP_PIN);
+
+                        if (newapp_userexists) {
+                            checkifCorrectPattern(pattern.toString());
+                        }
+                        else {
+                            config.setByteArray(pattern);
+                            startPinActivity(Config.PIN_SIGNUP, Config.SIGNUP_PIN);
+                        }
                         break;
                     case RESULT_CANCELED:
                         endActivity(RESULT_CANCELED);
@@ -412,7 +418,8 @@ public class AuthScreen extends Activity {
                 String userExists = status.getJSONObject("Data").getString("Message");
                 if (TextUtils.equals(userExists, "FOUND")) {
                     if (TextUtils.isEmpty(stringArray)) {
-                        startPinActivity(Config.PIN_SIGNIN, Config.SIGNIN_PIN);
+                        newapp_userexists = true;
+                        signupUser(intent);
                     }
                     else {
                         char[] charArray = stringArray.toCharArray();
@@ -434,9 +441,49 @@ public class AuthScreen extends Activity {
 
     }
 
+    private void checkifCorrectPattern(final String pattern) {
+        Callback callback = new Callback() {
+            @Override
+            public void onTaskExecuted(String response) {
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getInt("Status") == 200) {
+                        if (jsonResponse.getJSONObject("Data").getJSONObject("Data").getBoolean("Result")) {
+                            config.setByteArray(pattern.toCharArray());
+                            startPinActivity(Config.PIN_SIGNUP, Config.SIGNUP_PIN);
+                        }
+                        else {
+                            endActivity(RESULT_FAILED);
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    endActivity(RESULT_FAILED);
+                }
+
+            }
+        };
+
+        JSONObject request = new JSONObject();
+        try {
+            request.put("User", email);
+            request.put("PatternEncoding", pattern);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            endActivity(RESULT_FAILED);
+        }
+
+        try {
+            new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "api/patternverify", request.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            endActivity(RESULT_FAILED);
+        }
+    }
+
     private void resetFlow() {
         Intent intent = new Intent(AuthScreen.this, LockPatternActivity.class);
-        signupUser(addOns(intent));
+        signupUser(intent);
     }
 
     private void startPinActivity(int purpose, String action) {
