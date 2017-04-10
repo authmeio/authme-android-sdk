@@ -904,9 +904,10 @@ public class LockPatternActivity extends Activity {
                     mBtnConfirm.setEnabled(false);
                 } else {
                     final char[] pattern = getIntent().getCharArrayExtra(EXTRA_PATTERN);
+                    String jsonPattern = getIntent().getStringExtra(PATTERN_JSON);
                     if (mAutoSave)
                         AlpSettings.Security.setPattern(LockPatternActivity.this, pattern);
-                    finishWithResultOk(pattern, "");
+                    finishWithResultOk(pattern, jsonPattern);
                 }
             }// ACTION_CREATE_PATTERN
             else if (ACTION_COMPARE_PATTERN.equals(getIntent().getAction())) {

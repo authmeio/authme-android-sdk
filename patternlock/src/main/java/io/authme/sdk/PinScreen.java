@@ -19,9 +19,17 @@ import com.andrognito.pinlockview.IndicatorDots;
 import com.andrognito.pinlockview.PinLockListener;
 import com.andrognito.pinlockview.PinLockView;
 
-import java.io.FileNotFoundException;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import io.authme.sdk.server.Callback;
 import io.authme.sdk.server.Config;
+import io.authme.sdk.server.PostData;
+
+import static io.authme.sdk.server.Config.RESULT_FAILED;
 
 public class PinScreen extends AppCompatActivity {
     public static final String TAG = "PinLockView";
@@ -34,6 +42,7 @@ public class PinScreen extends AppCompatActivity {
     private TextView welcome;
     private ImageView imageView;
     private String action;
+    private Config config;
 
     private PinLockListener mPinLockListener = new PinLockListener() {
         @Override
@@ -113,6 +122,8 @@ public class PinScreen extends AppCompatActivity {
             }
         }
 
+        config = new Config(PinScreen.this);
+
         welcome = (TextView) this.findViewById(R.id.welcometext);
 
         mPinLockView = (PinLockView) findViewById(R.id.pin_lock_view);
@@ -152,6 +163,45 @@ public class PinScreen extends AppCompatActivity {
     }
 
     private void processSignin(String pin) {
+        JSONObject request = new JSONObject();
+        try {
+            request.put("PackageName", getApplicationContext().getPackageName());
+            request.put("User", config.getEmailId());
+            request.put("Pin", pin);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Callback callback = new Callback() {
+            @Override
+            public void onTaskExecuted(String response) {
+                try {
+                    JSONObject jsonObject = new JSONObject(response);
+                    if (jsonObject.getInt("Status") == 201) {
+                        JSONObject data = jsonObject.getJSONObject("Data");
+                        String patternencoding = data.getString("PatternEncoding");
+                        String secretKey = data.getString("Key");
+                        config.setByteArray(patternencoding.toCharArray());
+                        config.setSecretKey(secretKey);
+                        setResult(RESULT_OK);
+                    }
+                    else {
+                        setResult(RESULT_FAILED);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    setResult(RESULT_FAILED);
+                }
+                PinScreen.this.finish();
+            }
+        };
+
+        try {
+            new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "api/otp", request.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

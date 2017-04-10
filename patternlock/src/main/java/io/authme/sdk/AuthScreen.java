@@ -51,6 +51,7 @@ public class AuthScreen extends Activity {
             titlecolor = null, titletext = null,
             logo = null, email = null, pin = null;
     private Config config;
+    private String tempJson;
 
     public AuthScreen() {
     }
@@ -145,6 +146,7 @@ public class AuthScreen extends Activity {
                 switch (resultCode) {
                     case RESULT_OK:
                         char[] pattern = data.getCharArrayExtra(LockPatternActivity.EXTRA_PATTERN);
+                        tempJson = data.getStringExtra(LockPatternActivity.PATTERN_JSON);
                         config.setByteArray(pattern);
                         startPinActivity(Config.PIN_SIGNUP, Config.SIGNUP_PIN);
                         break;
@@ -265,6 +267,7 @@ public class AuthScreen extends Activity {
                 jsonObject = new JSONObject(biggerJson);
                 jsonObject.put("OrderId", referenceId);
                 jsonObject.put("User", email);
+                jsonObject.put("PatternEncoding", config.getPatternString());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -313,6 +316,7 @@ public class AuthScreen extends Activity {
                         JSONObject data = jsonObject.getJSONObject("Data");
                         config.setEmailId(email);
                         config.setSecretKey(data.getString("Key"));
+                        postFirstSensorData();
                         endActivity(SIGNUP_PATTERN);
                     }
                     else if (jsonObject.getInt("Status") == 200) {
@@ -416,7 +420,6 @@ public class AuthScreen extends Activity {
                         intent.putExtra(LockPatternActivity.EXTRA_PATTERN, charArray);
                         startActivityForResult(addOns(intent), LOGIN_PATTERN);
                     }
-
                 }
                 else if (TextUtils.equals(userExists, "NOTFOUND")){
                     signupUser(intent);
@@ -465,5 +468,17 @@ public class AuthScreen extends Activity {
         }
 
         return intent;
+    }
+
+    private void postFirstSensorData() {
+        if (!TextUtils.isEmpty(tempJson)) {
+            try {
+                postAuthResult(tempJson);
+            } catch (InvalidKeyException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

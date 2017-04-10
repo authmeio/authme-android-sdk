@@ -90,6 +90,12 @@ public class LockPatternView extends View implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
         if (collectSensor) {
             Sensor sensor = event.sensor;
+            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                mGravity = event.values;
+                Accelerometer sensordata = new Accelerometer(mGravity[0], mGravity[1], mGravity[2], event.timestamp);
+                accelList.add(sensordata);
+            }
+
             if (sensor.getType() == Sensor.TYPE_GRAVITY) {
                 mGravity = event.values;
                 Accelerometer sensordata = new Accelerometer(mGravity[0], mGravity[1], mGravity[2], event.timestamp);
@@ -418,11 +424,24 @@ public class LockPatternView extends View implements SensorEventListener {
         super(context, attrs);
         senSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        senMagnetometer = senSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        sensGyro = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        if (senAccelerometer == null) {
+            senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
         senSensorManager.registerListener(this, senAccelerometer, SensorManager.SENSOR_DELAY_GAME);
-        senSensorManager.registerListener(this, senMagnetometer, SensorManager.SENSOR_DELAY_GAME);
-        senSensorManager.registerListener(this, sensGyro, SensorManager.SENSOR_DELAY_GAME);
+
+        sensGyro = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
+        if (sensGyro != null) {
+            senSensorManager.registerListener(this, sensGyro, SensorManager.SENSOR_DELAY_GAME);
+        }
+
+        senMagnetometer = senSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        if (senMagnetometer != null) {
+            senSensorManager.registerListener(this, senMagnetometer, SensorManager.SENSOR_DELAY_GAME);
+        }
+
         accelList = new ArrayList<>();
         magnetics = new ArrayList<>();
         gyrolist = new ArrayList<>();
