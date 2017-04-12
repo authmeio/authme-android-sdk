@@ -36,7 +36,7 @@ public class PinScreen extends AppCompatActivity {
 
     private PinLockView mPinLockView;
     private IndicatorDots mIndicatorDots;
-    private String pin1, pin2, logo;
+    private String pin1, pin2, logo, referenceId;
     private boolean firstPin;
 
     private TextView welcome;
@@ -108,6 +108,10 @@ public class PinScreen extends AppCompatActivity {
             logo = getIntent().getStringExtra("logo");
         }
 
+        if (getIntent().hasExtra("referenceId")) {
+            referenceId = getIntent().getStringExtra("referenceId");
+        }
+
         setContentView(R.layout.activity_pin_screen);
 
         imageView = (ImageView) findViewById(R.id.logo);
@@ -168,6 +172,11 @@ public class PinScreen extends AppCompatActivity {
             request.put("PackageName", getApplicationContext().getPackageName());
             request.put("User", config.getEmailId());
             request.put("Pin", pin);
+
+            if (!TextUtils.isEmpty(referenceId)) {
+                request.put("ReferenceId", referenceId);
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -177,13 +186,15 @@ public class PinScreen extends AppCompatActivity {
             public void onTaskExecuted(String response) {
                 try {
                     JSONObject jsonObject = new JSONObject(response);
-                    if (jsonObject.getInt("Status") == 201) {
+                    if (jsonObject.getInt("Status") == 200) {
+                        String secretKey = jsonObject.getString("Key");
                         JSONObject data = jsonObject.getJSONObject("Data");
                         String patternencoding = data.getString("PatternEncoding");
-                        String secretKey = data.getString("Key");
                         config.setByteArray(patternencoding.toCharArray());
                         config.setSecretKey(secretKey);
-                        setResult(RESULT_OK);
+                        Intent intent = new Intent();
+                        intent.putExtra("response", data.toString());
+                        setResult(RESULT_OK, intent);
                     }
                     else {
                         setResult(RESULT_FAILED);

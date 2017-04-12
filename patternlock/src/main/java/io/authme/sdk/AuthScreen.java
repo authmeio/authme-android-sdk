@@ -29,7 +29,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
-import java.util.UUID;
 
 import io.authme.sdk.server.Callback;
 import io.authme.sdk.server.Config;
@@ -51,7 +50,7 @@ public class AuthScreen extends Activity {
             logo = null, email = null, pin = null;
     private Config config;
     private String tempJson;
-    private boolean newapp_userexists = false;
+    private boolean newapp_userexists = false, local_swipe = false;
 
     public AuthScreen() {
     }
@@ -95,7 +94,8 @@ public class AuthScreen extends Activity {
             referenceId = getIntent().getStringExtra("referenceId");
         }
         else {
-            referenceId = UUID.randomUUID().toString();
+            local_swipe = true;
+            referenceId = "";
         }
 
         if (getIntent().hasExtra("resetKey")) {
@@ -149,7 +149,8 @@ public class AuthScreen extends Activity {
                         tempJson = data.getStringExtra(LockPatternActivity.PATTERN_JSON);
 
                         if (newapp_userexists) {
-                            checkifCorrectPattern(pattern.toString());
+                            String userpattern = new String(pattern);
+                            checkifCorrectPattern(userpattern);
                         }
                         else {
                             config.setByteArray(pattern);
@@ -223,7 +224,11 @@ public class AuthScreen extends Activity {
             case PIN_SIGNIN: {
                 switch (resultCode) {
                     case RESULT_OK:
-                        //Yet to write the code
+                        if (data != null) {
+                            if (data.hasExtra("response")) {
+                                endActivity(RESULT_OK, data.getStringExtra("response"));
+                            }
+                        }
                         break;
 
                     case RESULT_CANCELED:
@@ -271,7 +276,17 @@ public class AuthScreen extends Activity {
 
             try {
                 jsonObject = new JSONObject(biggerJson);
-                jsonObject.put("OrderId", referenceId);
+                if (!TextUtils.isEmpty(referenceId)) {
+                    jsonObject.put("OrderId", referenceId);
+                }
+
+                if (local_swipe) {
+                    JSONObject authObject = new JSONObject();
+                    authObject.put("ReferenceId", "");
+                    authObject.put("UserIdentifier", email);
+                    jsonObject.put("AuthInit", authObject);
+                }
+
                 jsonObject.put("User", email);
                 jsonObject.put("PatternEncoding", config.getPatternString());
             } catch (JSONException e) {
@@ -287,13 +302,32 @@ public class AuthScreen extends Activity {
         Callback callback = new Callback() {
             @Override
             public void onTaskExecuted(String response) {
-                endActivity(LOGIN_PATTERN, response);
+                try {
+                    JSONObject jsonObject1 = new JSONObject(response);
+                    if (jsonObject1.getBoolean("Accept")) {
+                        endActivity(LOGIN_PATTERN, response);
+                    }
+                    else {
+                        startPinActivity(Config.PIN_SIGNIN, Config.SIGNIN_PIN);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
             }
         };
 
         io.authme.sdk.server.PostData postData = new io.authme.sdk.server.PostData(callback, config.getApiKey());
+
         try {
-            postData.runPost(config.getServerURL() + "api/sensor", jsonObject.toString());
+            String url = null;
+            if (local_swipe) {
+                url = "api/authenticate";
+            }
+            else {
+                url = "api/sensor";
+            }
+            postData.runPost(config.getServerURL() + url, jsonObject.toString());
         } catch (IOException e) {
             endActivity(RESULT_FAILED, "Failed to post result to sensor API");
         }
@@ -450,10 +484,11 @@ public class AuthScreen extends Activity {
                     if (jsonResponse.getInt("Status") == 200) {
                         if (jsonResponse.getJSONObject("Data").getJSONObject("Data").getBoolean("Result")) {
                             config.setByteArray(pattern.toCharArray());
-                            startPinActivity(Config.PIN_SIGNUP, Config.SIGNUP_PIN);
+                            config.setEmailId(email);
+                            startPinActivity(Config.PIN_SIGNIN, Config.SIGNIN_PIN);
                         }
                         else {
-                            endActivity(RESULT_FAILED);
+                            endActivity(RESULT_FAILED, "Incorrect Pattern");
                         }
                     }
                 } catch (JSONException e) {
@@ -488,6 +523,9 @@ public class AuthScreen extends Activity {
 
     private void startPinActivity(int purpose, String action) {
         Intent intent = new Intent(AuthScreen.this, PinScreen.class);
+        if (!TextUtils.isEmpty(referenceId)) {
+            intent.putExtra("referenceId", referenceId);
+        }
         intent.setAction(action);
         startActivityForResult(addOns(intent), purpose);
     }
