@@ -1,5 +1,6 @@
 package io.authme.sdk;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -8,7 +9,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.Window;
 import android.view.WindowManager;
@@ -31,7 +31,7 @@ import io.authme.sdk.server.PostData;
 
 import static io.authme.sdk.server.Config.RESULT_FAILED;
 
-public class PinScreen extends AppCompatActivity {
+public class PinScreen extends Activity {
     public static final String TAG = "PinLockView";
 
     private PinLockView mPinLockView;
@@ -68,10 +68,12 @@ public class PinScreen extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
 
         action = getIntent().getAction();
 
@@ -111,6 +113,8 @@ public class PinScreen extends AppCompatActivity {
         if (getIntent().hasExtra("referenceId")) {
             referenceId = getIntent().getStringExtra("referenceId");
         }
+
+        super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_pin_screen);
 

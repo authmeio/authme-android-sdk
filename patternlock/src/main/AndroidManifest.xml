@@ -20,7 +20,12 @@
         <activity
             android:name=".AuthScreen"
             android:label="@string/title_activity_intermediate" />
-        <activity android:name=".PinScreen"></activity>
+        <activity android:name=".PinScreen"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:screenOrientation="user"
+            android:showOnLockScreen="true"
+            android:theme="@style/Alp_42447968.Theme.Light"/>
     </application>
 
 </manifest>
