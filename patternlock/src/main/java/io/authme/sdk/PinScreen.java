@@ -189,8 +189,6 @@ public class PinScreen extends AppCompatActivity {
                     if (jsonObject.getInt("Status") == 200) {
                         String secretKey = jsonObject.getString("Key");
                         JSONObject data = jsonObject.getJSONObject("Data");
-                        String patternencoding = data.getString("PatternEncoding");
-                        config.setByteArray(patternencoding.toCharArray());
                         config.setSecretKey(secretKey);
                         Intent intent = new Intent();
                         intent.putExtra("response", data.toString());

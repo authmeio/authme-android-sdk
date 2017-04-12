@@ -226,7 +226,7 @@ public class AuthScreen extends Activity {
                     case RESULT_OK:
                         if (data != null) {
                             if (data.hasExtra("response")) {
-                                endActivity(RESULT_OK, data.getStringExtra("response"));
+                                endActivity(LOGIN_PATTERN, data.getStringExtra("response"));
                             }
                         }
                         break;
@@ -518,7 +518,7 @@ public class AuthScreen extends Activity {
 
     private void resetFlow() {
         Intent intent = new Intent(AuthScreen.this, LockPatternActivity.class);
-        signupUser(intent);
+        signupUser(addOns(intent));
     }
 
     private void startPinActivity(int purpose, String action) {
