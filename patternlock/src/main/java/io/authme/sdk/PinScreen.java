@@ -118,6 +118,7 @@ public class PinScreen extends Activity {
 
         setContentView(R.layout.activity_pin_screen);
 
+
         imageView = (ImageView) findViewById(R.id.logo);
 
         if (!TextUtils.isEmpty(logo)) {
@@ -146,6 +147,10 @@ public class PinScreen extends Activity {
         mPinLockView.setTextColor(ContextCompat.getColor(this, R.color.white));
 
         mIndicatorDots.setIndicatorType(IndicatorDots.IndicatorType.FILL_WITH_ANIMATION);
+
+        if (TextUtils.equals(action, Config.SIGNIN_PIN)) {
+            welcome.setText("Enter Your Pin");
+        }
 
     }
 
@@ -178,7 +183,7 @@ public class PinScreen extends Activity {
             request.put("Pin", pin);
 
             if (!TextUtils.isEmpty(referenceId)) {
-                request.put("ReferenceId", referenceId);
+                request.put("OrderId", referenceId);
             }
 
         } catch (JSONException e) {
@@ -199,7 +204,9 @@ public class PinScreen extends Activity {
                         setResult(RESULT_OK, intent);
                     }
                     else {
-                        setResult(RESULT_FAILED);
+                        Intent intent = new Intent();
+                        intent.putExtra("response", "failed to verify pin");
+                        setResult(RESULT_FAILED, intent);
                     }
 
                 } catch (JSONException e) {

@@ -175,15 +175,11 @@ public class Config {
 
     public String getPendingLogins(Callback callback) {
         if (!isValidEmail(getEmailId())) {
-            Toast.makeText(activity.getApplicationContext(), "Invalid Email", Toast.LENGTH_LONG)
-                    .show();
-            return null;
+            return "Invalid Email";
         }
 
         if (!isValidConfig()) {
-            Toast.makeText(activity.getApplicationContext(), "Invalid Config", Toast.LENGTH_LONG)
-                    .show();
-            return null;
+            return "Invalid Config";
         }
 
         JSONObject jsonObject = new JSONObject();

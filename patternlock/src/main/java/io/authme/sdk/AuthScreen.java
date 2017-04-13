@@ -238,7 +238,7 @@ public class AuthScreen extends Activity {
 
                     case RESULT_FAILED:
                         clearJson();
-                        endActivity(RESULT_FAILED);
+                        endActivity(RESULT_FAILED, data.getStringExtra("response"));
                         break;
 
                     case RESET_PATTERN:
@@ -308,6 +308,7 @@ public class AuthScreen extends Activity {
                         endActivity(LOGIN_PATTERN, response);
                     }
                     else {
+                        referenceId = jsonObject1.getString("ReferenceId");
                         startPinActivity(Config.PIN_SIGNIN, Config.SIGNIN_PIN);
                     }
                 } catch (JSONException e) {
