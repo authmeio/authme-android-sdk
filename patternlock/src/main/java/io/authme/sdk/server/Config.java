@@ -173,13 +173,35 @@ public class Config {
         return true;
     }
 
-    public String getPendingLogins(Callback callback) {
+    public void getPendingLogins(Callback callback) {
         if (!isValidEmail(getEmailId())) {
-            return "Invalid Email";
+            JSONObject errorjson = new JSONObject();
+            try {
+                errorjson.put("Status", 401);
+                JSONObject data = new JSONObject();
+                data.put("Error", "Invalid Email");
+                errorjson.put("Data", data);
+                callback.onTaskExecuted(errorjson.toString());
+                return;
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return;
+            }
         }
 
         if (!isValidConfig()) {
-            return "Invalid Config";
+            JSONObject errorjson = new JSONObject();
+            try {
+                errorjson.put("Status", 401);
+                JSONObject data = new JSONObject();
+                data.put("Error", "Invalid Config");
+                errorjson.put("Data", data);
+                callback.onTaskExecuted(errorjson.toString());
+                return;
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return;
+            }
         }
 
         JSONObject jsonObject = new JSONObject();
@@ -188,18 +210,28 @@ public class Config {
             jsonObject.put("Otp", getOTP());
         } catch (JSONException e) {
             e.printStackTrace();
-            return null;
+            return;
         }
 
         try {
             new PostData(callback, getApiKey()).runPost(getServerURL() + "user/logins", jsonObject.toString());
         } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(activity.getApplicationContext(), "Internet not available or server down", Toast.LENGTH_LONG)
-                    .show();
-            return null;
+            JSONObject errorjson = new JSONObject();
+            try {
+                errorjson.put("Status", 401);
+                JSONObject data = new JSONObject();
+                data.put("Error", "Internet or Server Down");
+                errorjson.put("Data", data);
+                callback.onTaskExecuted(errorjson.toString());
+                return;
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
         }
 
-        return null;
+    }
+
+    public void clearSavedPattern() {
+        editor.remove(BYTE_ARRAY).commit();
     }
 }

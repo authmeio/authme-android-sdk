@@ -1,6 +1,7 @@
 package io.authme.sdk;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -41,8 +42,9 @@ public class PinScreen extends Activity {
 
     private TextView welcome;
     private ImageView imageView;
-    private String action;
+    private String action, email;
     private Config config;
+    private ProgressDialog dialog;
 
     private PinLockListener mPinLockListener = new PinLockListener() {
         @Override
@@ -76,6 +78,15 @@ public class PinScreen extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
 
         action = getIntent().getAction();
+
+        email = getIntent().getStringExtra("email");
+
+        dialog = new ProgressDialog(PinScreen.this);
+
+        if (!Config.isValidEmail(email)) {
+            PinScreen.this.finish();
+            return;
+        }
 
         if (getIntent().hasExtra("statusbar")) {
 
@@ -179,7 +190,7 @@ public class PinScreen extends Activity {
         JSONObject request = new JSONObject();
         try {
             request.put("PackageName", getApplicationContext().getPackageName());
-            request.put("User", config.getEmailId());
+            request.put("User", email);
             request.put("Pin", pin);
 
             if (!TextUtils.isEmpty(referenceId)) {
@@ -194,6 +205,7 @@ public class PinScreen extends Activity {
             @Override
             public void onTaskExecuted(String response) {
                 try {
+                    dismissdialog();
                     JSONObject jsonObject = new JSONObject(response);
                     if (jsonObject.getInt("Status") == 200) {
                         String secretKey = jsonObject.getString("Key");
@@ -218,11 +230,19 @@ public class PinScreen extends Activity {
         };
 
         try {
+            dialog.setMessage("Please wait..");
+            dialog.show();
             new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "api/otp", request.toString());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+    }
+
+    private void dismissdialog() {
+        if (dialog.isShowing()) {
+            dialog.dismiss();
+        }
     }
 
 }

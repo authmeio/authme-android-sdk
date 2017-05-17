@@ -17,6 +17,7 @@
 package io.authme.sdk;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -49,23 +50,26 @@ public class AuthScreen extends Activity {
             titlecolor = null, titletext = null,
             logo = null, email = null, pin = null;
     private Config config;
-    private String tempJson;
+    private String tempJson, temppattern;
     private boolean newapp_userexists = false, local_swipe = false;
+    private ProgressDialog dialog;
 
     public AuthScreen() {
+
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        dialog = new ProgressDialog(AuthScreen.this);
+
         config = new Config(AuthScreen.this);
 
         email = getIntent().getStringExtra("email");
 
         if (!Config.isValidEmail(email)) {
-            Toast.makeText(getApplicationContext(), "Invalid Email", Toast.LENGTH_LONG)
-                    .show();
+            endActivity(RESULT_FAILED, "Invalid Email");
             return;
         }
 
@@ -135,6 +139,7 @@ public class AuthScreen extends Activity {
             @Override
             public void onTaskExecuted(String response) {
                 startLockScreen(response);
+                dismissdialog();
             }
         });
     }
@@ -147,13 +152,12 @@ public class AuthScreen extends Activity {
                     case RESULT_OK:
                         char[] pattern = data.getCharArrayExtra(LockPatternActivity.EXTRA_PATTERN);
                         tempJson = data.getStringExtra(LockPatternActivity.PATTERN_JSON);
+                        temppattern = new String(pattern);
 
                         if (newapp_userexists) {
-                            String userpattern = new String(pattern);
-                            checkifCorrectPattern(userpattern);
+                            checkifCorrectPattern();
                         }
                         else {
-                            config.setByteArray(pattern);
                             startPinActivity(Config.PIN_SIGNUP, Config.SIGNUP_PIN);
                         }
                         break;
@@ -226,6 +230,14 @@ public class AuthScreen extends Activity {
                     case RESULT_OK:
                         if (data != null) {
                             if (data.hasExtra("response")) {
+                                if (!TextUtils.isEmpty(temppattern)) {
+                                    config.setByteArray(temppattern.toCharArray());
+                                }
+
+                                if (!TextUtils.isEmpty(email)) {
+                                    config.setEmailId(email);
+                                }
+
                                 endActivity(LOGIN_PATTERN, data.getStringExtra("response"));
                             }
                         }
@@ -233,16 +245,19 @@ public class AuthScreen extends Activity {
 
                     case RESULT_CANCELED:
                         clearJson();
+                        config.clearSavedPattern();
                         endActivity(RESULT_CANCELED);
                         break;
 
                     case RESULT_FAILED:
                         clearJson();
+                        config.clearSavedPattern();
                         endActivity(RESULT_FAILED, data.getStringExtra("response"));
                         break;
 
                     case RESET_PATTERN:
                         clearJson();
+                        config.clearSavedPattern();
                         endActivity(RESET_PATTERN);
                         break;
 
@@ -303,6 +318,7 @@ public class AuthScreen extends Activity {
             @Override
             public void onTaskExecuted(String response) {
                 try {
+                    dismissdialog();
                     JSONObject jsonObject1 = new JSONObject(response);
                     if (jsonObject1.getBoolean("Accept")) {
                         endActivity(LOGIN_PATTERN, response);
@@ -328,6 +344,8 @@ public class AuthScreen extends Activity {
             else {
                 url = "api/sensor";
             }
+            dialog.setMessage("Please wait..");
+            dialog.show();
             postData.runPost(config.getServerURL() + url, jsonObject.toString());
         } catch (IOException e) {
             endActivity(RESULT_FAILED, "Failed to post result to sensor API");
@@ -352,10 +370,12 @@ public class AuthScreen extends Activity {
             public void onTaskExecuted(String response) {
                 JSONObject jsonObject;
                 try {
+                    dismissdialog();
                     jsonObject = new JSONObject(response);
                     if (jsonObject.getInt("Status") == 201) {
                         JSONObject data = jsonObject.getJSONObject("Data");
                         config.setEmailId(email);
+                        config.setByteArray(temppattern.toCharArray());
                         config.setSecretKey(data.getString("Key"));
                         postFirstSensorData();
                         endActivity(SIGNUP_PATTERN);
@@ -399,6 +419,8 @@ public class AuthScreen extends Activity {
         }
 
         try {
+            dialog.setMessage("Signing up..");
+            dialog.show();
             new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "user/new", request.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -433,6 +455,8 @@ public class AuthScreen extends Activity {
         }
 
         try {
+            dialog.setMessage("Checking user status..");
+            dialog.show();
             new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "user/is", user.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -476,16 +500,15 @@ public class AuthScreen extends Activity {
 
     }
 
-    private void checkifCorrectPattern(final String pattern) {
+    private void checkifCorrectPattern() {
         Callback callback = new Callback() {
             @Override
             public void onTaskExecuted(String response) {
                 try {
+                    dismissdialog();
                     JSONObject jsonResponse = new JSONObject(response);
                     if (jsonResponse.getInt("Status") == 200) {
                         if (jsonResponse.getJSONObject("Data").getJSONObject("Data").getBoolean("Result")) {
-                            config.setByteArray(pattern.toCharArray());
-                            config.setEmailId(email);
                             startPinActivity(Config.PIN_SIGNIN, Config.SIGNIN_PIN);
                         }
                         else {
@@ -503,13 +526,15 @@ public class AuthScreen extends Activity {
         JSONObject request = new JSONObject();
         try {
             request.put("User", email);
-            request.put("PatternEncoding", pattern);
+            request.put("PatternEncoding", temppattern);
         } catch (JSONException e) {
             e.printStackTrace();
             endActivity(RESULT_FAILED);
         }
 
         try {
+            dialog.setMessage("Checking user pattern...");
+            dialog.show();
             new PostData(callback, config.getApiKey()).runPost(config.getServerURL() + "api/patternverify", request.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -528,6 +553,7 @@ public class AuthScreen extends Activity {
             intent.putExtra("referenceId", referenceId);
         }
         intent.setAction(action);
+        intent.putExtra("email", email);
         startActivityForResult(addOns(intent), purpose);
     }
 
@@ -565,6 +591,12 @@ public class AuthScreen extends Activity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void dismissdialog() {
+        if (dialog.isShowing()) {
+            dialog.dismiss();
         }
     }
 }
